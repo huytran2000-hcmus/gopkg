@@ -26,6 +26,12 @@ type (
 	level int
 )
 
+func GetGlobal() *Logger {
+	return &Logger{
+		logger: zap.L().Sugar(),
+	}
+}
+
 func New(name string, mode mode, minLevel level, filePaths ...string) (*Logger, error) {
 	var logger *zap.SugaredLogger
 	var err error
