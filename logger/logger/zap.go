@@ -26,37 +26,27 @@ type (
 	level int
 )
 
-type Logger interface {
-	DPanic(args ...interface{})
-	DPanicf(template string, args ...interface{})
-	DPanicln(args ...interface{})
-	Debug(args ...interface{})
-	Debugf(template string, args ...interface{})
-	Debugln(args ...interface{})
-	Error(args ...interface{})
-	Errorf(template string, args ...interface{})
-	Errorln(args ...interface{})
-	Fatal(args ...interface{})
-	Fatalf(template string, args ...interface{})
-	Fatalln(args ...interface{})
-	Info(args ...interface{})
-	Infof(template string, args ...interface{})
-	Infoln(args ...interface{})
-	Panic(args ...interface{})
-	Panicf(template string, args ...interface{})
-	Panicln(args ...interface{})
-	Warn(args ...interface{})
-	Warnf(template string, args ...interface{})
-	Warnln(args ...interface{})
-}
-
-func New(name string, mode mode, minLevel level, filePaths ...string) (Logger, error) {
+func New(name string, mode mode, minLevel level, filePaths ...string) (*Logger, error) {
+	var logger *zap.SugaredLogger
+	var err error
 	switch mode {
 	case Production:
-		return newLogger(name, minLevel, productionEncoderConfig(), filePaths...)
+		logger, err = newLogger(name, minLevel, productionEncoderConfig(), filePaths...)
 	default:
-		return newLogger(name, minLevel, developmentEncoderConfig(), filePaths...)
+		logger, err = newLogger(name, minLevel, developmentEncoderConfig(), filePaths...)
 	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &Logger{
+		logger: logger,
+	}, nil
+}
+
+func ReplaceGlobals(logger *Logger) {
+	zap.ReplaceGlobals(logger.logger.Desugar())
 }
 
 func newLogger(name string, minLevel level, cfg zapcore.EncoderConfig, paths ...string) (*zap.SugaredLogger, error) {
